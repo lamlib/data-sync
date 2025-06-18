@@ -2,7 +2,10 @@
   "name": "@lamlib/data-sync",
   "version": "1.0.2",
   "description": "A library for sync data on client-side base on fetch API",
-  "main": "index.js",
+  "main": "src/main.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "node ./scripts/build.mjs",
     "prepare": "husky",
