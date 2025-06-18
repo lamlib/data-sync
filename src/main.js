@@ -58,9 +58,8 @@ const isSameParams = (key, params) => {
 const syncData = async (fetchFn, key, params) => {
     messageState.error = null;
     messageState.success = null;
-
     try {
-        if (params !== false) {
+        if (!!params !== false) {
             if (isSameParams(key, params)) {
                 console.warn('⚠️ DataSync: Using cached data, skipping request.');
                 return;
@@ -75,13 +74,19 @@ const syncData = async (fetchFn, key, params) => {
         }, timeout);
 
         dataStore.set(key, null);
+        /**@type {Response} */
         const response = await fetchFn();
         clearTimeout(timeoutId);
 
         const result = await response.json();
 
-        if (result.code && result.code !== 'SUCCESS') throw result.message;
-        if (result.result === false) throw result.message;
+        interceptors.after && interceptors.after(result);
+
+        if (
+            result.code && result.code !== 'SUCCESS' || 
+            result.result === false || 
+            !response.ok
+        ) throw new Error(result.message);
 
         const data = result.data || result.result;
         dataStore.set(key, data);
@@ -90,16 +95,22 @@ const syncData = async (fetchFn, key, params) => {
         return data;
     } catch (err) {
         messageState.error = err;
-        alert(err);
+        console.log(err);
     } finally {
         if (activeRequestCount > 0) activeRequestCount--;
         if (activeRequestCount === 0) {
             loadingHooks.onQueueEmpty && loadingHooks.onQueueEmpty();
         }
+        
     }
 };
 
 const requestHandlers = {};
+
+const interceptors = {
+    before: null,
+    after: null,
+}
 
 /**
  * Đăng ký một endpoint GET
@@ -110,10 +121,16 @@ const requestHandlers = {};
 const registerGetEndpoint = (name, url, mode) => {
     Object.defineProperty(requestHandlers, name, {
         value: async (params) => {
-            const searchParams = new URLSearchParams(params);
-            const queryString = searchParams.toString() ? '?' + searchParams.toString() : '';
             return await syncData(
-                () => fetch(url + queryString),
+                async () => {
+                    const searchParams = new URLSearchParams(params);
+                    const queryString = searchParams.toString() ? '?' + searchParams.toString() : '';
+                    const headers = new Headers();
+                    interceptors.before && await interceptors.before({ params, headers, type: 'GET' })
+                    return await fetch(url + queryString, {
+                        headers,
+                    });
+                },
                 name,
                 mode === 'no-cache' ? false : Object.values(params || {})
             );
@@ -128,25 +145,26 @@ const registerGetEndpoint = (name, url, mode) => {
  * @param {string} url URL endpoint
  */
 const registerPostEndpoint = (name, url) => {
-    const headers = {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-    };
-
     Object.defineProperty(requestHandlers, name, {
         value: async (body, params) => {
-            const searchParams = new URLSearchParams(params);
-            const queryString = searchParams.toString() ? '?' + searchParams.toString() : '';
-            const finalUrl = url + queryString;
 
             return await syncData(
-                () => {
+                async () => {
+                    const headers = new Headers();
+                    interceptors.before && await interceptors.before({ body, params, headers, type: 'POST' })
+                    const searchParams = new URLSearchParams(params);
+                    const queryString = searchParams.toString() ? '?' + searchParams.toString() : '';
+                    const finalUrl = url + queryString;
+
                     if (body instanceof FormData) {
-                        return fetch(finalUrl, {
+                        return await fetch(finalUrl, {
                             method: 'POST',
-                            body: body
+                            body: body,
+                            headers,
                         });
                     }
+                    headers.append('Accept', 'application/json')
+                    headers.append('Content-Type', 'application/json')
                     return fetch(finalUrl, {
                         method: 'POST',
                         body: JSON.stringify(body),
@@ -171,4 +189,5 @@ export {
     requestHandlers,
     activeRequestCount,
     loadingHooks,
+    interceptors
 }

@@ -23,7 +23,7 @@ await esbuild.build({
  */`,
   },
   outdir: 'dist',
-  format: 'iife',
+  format: 'esm',
   globalName: 'DataSync',
   minify: true,
 })
