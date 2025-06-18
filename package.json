@@ -4,13 +4,31 @@
   "description": "A library for sync data on client-side base on fetch API",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "node ./scripts/build.mjs"
+    "build": "node ./scripts/build.mjs",
+    "prepare": "husky",
+    "test": "vitest",
+    "test:browser": "vitest",
+    "commit": "cz",
+    "release": "standard-version"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "esbuild": "0.25.4"
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@vitest/browser": "^3.2.4",
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "esbuild": "0.25.4",
+    "husky": "^9.1.7",
+    "playwright": "^1.53.0",
+    "standard-version": "^9.5.0",
+    "vitest": "^3.2.4"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }
