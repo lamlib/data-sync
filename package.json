@@ -1,5 +1,5 @@
 {
-  "name": "data-sync",
+  "name": "@lamlib/data-sync",
   "version": "1.0.1",
   "description": "A library for sync data on client-side base on fetch API",
   "main": "index.js",
