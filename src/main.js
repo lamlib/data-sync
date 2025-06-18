@@ -113,6 +113,31 @@ const interceptors = {
 }
 
 /**
+ * Thay thế path parameters trong URL
+ * @param {string} url URL có chứa path params như /api/x/:id
+ * @param {object} pathParams Object chứa các path params
+ * @returns {{ finalUrl: string, remainingParams: object }}
+ */
+const buildUrlWithPathParams = (url, pathParams = {}) => {
+    let finalUrl = url;
+    const remainingParams = { ...pathParams };
+
+    // Tìm và thay thế các path params (:param)
+    const pathParamsMatches = url.match(/:(\w+)/g);
+    if(pathParamsMatches) {
+        pathParamsMatches.forEach(match => {
+            const paramName = match.substring(1); // Bỏ dấu :
+            if (remainingParams[paramName] !== undefined) {
+                finalUrl = finalUrl.replace(match, remainingParams[paramName]);
+                delete remainingParams[paramName];
+            }
+        });
+    }
+
+    return { finalUrl, remainingParams };
+}
+
+/**
  * Đăng ký một endpoint GET
  * @param {string} name Tên request
  * @param {string} url URL endpoint
@@ -123,11 +148,12 @@ const registerGetEndpoint = (name, url, mode) => {
         value: async (params) => {
             return await syncData(
                 async () => {
-                    const searchParams = new URLSearchParams(params);
-                    const queryString = searchParams.toString() ? '?' + searchParams.toString() : '';
                     const headers = new Headers();
                     interceptors.before && await interceptors.before({ params, headers, type: 'GET' })
-                    return await fetch(url + queryString, {
+                    const { finalUrl, remainingParams } = buildUrlWithPathParams(url, params);
+                    const searchParams = new URLSearchParams(remainingParams);
+                    const queryString = searchParams.toString() ? '?' + searchParams.toString() : '';
+                    return await fetch(finalUrl + queryString, {
                         headers,
                     });
                 },
@@ -142,7 +168,7 @@ const registerGetEndpoint = (name, url, mode) => {
 /**
  * Đăng ký một endpoint POST
  * @param {string} name Tên request
- * @param {string} url URL endpoint
+ * @param {string} url URL endpoint có thể chứa path params như /api/x/:id
  */
 const registerPostEndpoint = (name, url) => {
     Object.defineProperty(requestHandlers, name, {
@@ -152,12 +178,13 @@ const registerPostEndpoint = (name, url) => {
                 async () => {
                     const headers = new Headers();
                     interceptors.before && await interceptors.before({ body, params, headers, type: 'POST' })
-                    const searchParams = new URLSearchParams(params);
+                    const { finalUrl, remainingParams } = buildUrlWithPathParams(url, params);
+                    const searchParams = new URLSearchParams(remainingParams);
                     const queryString = searchParams.toString() ? '?' + searchParams.toString() : '';
-                    const finalUrl = url + queryString;
+                     const completeUrl = finalUrl + queryString;
 
                     if (body instanceof FormData) {
-                        return await fetch(finalUrl, {
+                        return await fetch(completeUrl, {
                             method: 'POST',
                             body: body,
                             headers,
@@ -165,13 +192,124 @@ const registerPostEndpoint = (name, url) => {
                     }
                     headers.append('Accept', 'application/json')
                     headers.append('Content-Type', 'application/json')
-                    return fetch(finalUrl, {
+                    return fetch(completeUrl, {
                         method: 'POST',
                         body: JSON.stringify(body),
                         headers
                     });
                 },
-                name
+                name,
+                false
+            );
+        },
+        writable: false,
+    });
+};
+
+/**
+ * Đăng ký một endpoint PATCH
+ * @param {string} name Tên request
+ * @param {string} url URL endpoint có thể chứa path params như /api/x/:id
+ */
+const registerPatchEndpoint = (name, url) => {
+    Object.defineProperty(requestHandlers, name, {
+        value: async (body, params) => {
+            return await syncData(
+                async () => {
+                    const { finalUrl, remainingParams } = buildUrlWithPathParams(url, params);
+                    const headers = new Headers();
+                    interceptors.before && await interceptors.before({ body, params, headers, type: 'PATCH' })
+                    const searchParams = new URLSearchParams(remainingParams);
+                    const queryString = searchParams.toString() ? '?' + searchParams.toString() : '';
+                    const completeUrl = finalUrl + queryString;
+
+                    if (body instanceof FormData) {
+                        return await fetch(completeUrl, {
+                            method: 'PATCH',
+                            body: body,
+                            headers,
+                        });
+                    }
+                    headers.append('Accept', 'application/json')
+                    headers.append('Content-Type', 'application/json')
+                    return fetch(completeUrl, {
+                        method: 'PATCH',
+                        body: JSON.stringify(body),
+                        headers
+                    });
+                },
+                name,
+                false // PATCH thường không cache vì là mutation
+            );
+        },
+        writable: false,
+    });
+};
+
+/**
+ * Đăng ký một endpoint DELETE
+ * @param {string} name Tên request
+ * @param {string} url URL endpoint có thể chứa path params như /api/x/:id
+ */
+const registerDeleteEndpoint = (name, url) => {
+    Object.defineProperty(requestHandlers, name, {
+        value: async (params) => {
+            return await syncData(
+                async () => {
+                    const { finalUrl, remainingParams } = buildUrlWithPathParams(url, params);
+                    const headers = new Headers();
+                    interceptors.before && await interceptors.before({ params, headers, type: 'DELETE' })
+                    const searchParams = new URLSearchParams(remainingParams);
+                    const queryString = searchParams.toString() ? '?' + searchParams.toString() : '';
+                    const completeUrl = finalUrl + queryString;
+
+                    return await fetch(completeUrl, {
+                        method: 'DELETE',
+                        headers,
+                    });
+                },
+                name,
+                false // DELETE thường không cache vì là mutation
+            );
+        },
+        writable: false,
+    });
+};
+
+/**
+ * Đăng ký một endpoint PUT
+ * @param {string} name Tên request
+ * @param {string} url URL endpoint có thể chứa path params như /api/x/:id
+ */
+const registerPutEndpoint = (name, url) => {
+    Object.defineProperty(requestHandlers, name, {
+        value: async (body, params) => {
+            return await syncData(
+                async () => {
+                    const { finalUrl, remainingParams } = buildUrlWithPathParams(url, params);
+                    const headers = new Headers();
+                    interceptors.before && await interceptors.before({ body, params, headers, type: 'PUT' })
+                    const searchParams = new URLSearchParams(remainingParams);
+                    const queryString = searchParams.toString() ? '?' + searchParams.toString() : '';
+                    const completeUrl = finalUrl + queryString;
+
+                    if (body instanceof FormData) {
+                        return await fetch(completeUrl, {
+                            method: 'PUT',
+                            body: body,
+                            headers,
+                        });
+                    }
+                    headers.append('Accept', 'application/json')
+                    headers.append('Content-Type', 'application/json')
+                    return fetch(completeUrl, {
+                        method: 'PUT',
+                        body: JSON.stringify(body),
+                        headers
+                    });
+                },
+                name,
+                false // PUT thường không cache vì là mutation
             );
         },
         writable: false,
@@ -181,13 +319,15 @@ const registerPostEndpoint = (name, url) => {
 export {
     registerGetEndpoint,
     registerPostEndpoint,
+    registerPatchEndpoint,
+    registerPutEndpoint,
+    registerDeleteEndpoint,
     setLoadingHooks,
     dataStore,
     paramCache,
     messageState,
     hasError,
     requestHandlers,
-    activeRequestCount,
     loadingHooks,
     interceptors
 }
