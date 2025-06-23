@@ -5,17 +5,19 @@ Thư viện JavaScript nhẹ và mạnh mẽ để quản lý đồng bộ dữ 
 ## ✨ Tính năng chính
 
 - 🚀 **Cache thông minh**: Tự động cache parameters để tránh request trùng lặp
-- 🔄 **Loading states**: Quản lý trạng thái loading với hooks tùy chỉnh
+- 🔄 **Loading states**: Quản lý trạng thái loading với hooks tùy chỉnh và debounce 600ms
 - 📝 **Message handling**: Xử lý thông báo lỗi và thành công
-- 🔌 **Interceptors**: Middleware cho request/response
-- 🌐 **RESTful**: Hỗ trợ cả GET và POST endpoints
-- 📦 **No-cache mode**: Linh hoạt với mode cache hoặc no-cache
+- 🔌 **Interceptors**: Middleware cho request/response với Headers tùy chỉnh
+- 🌐 **RESTful**: Hỗ trợ đầy đủ GET, POST, PUT, PATCH và DELETE
+- 📦 **Path params**: Hỗ trợ URL có path parameters (/api/users/:id)
+- 🎯 **FormData**: Tự động xử lý cả JSON và FormData payloads
 
 ## 🚀 Cài đặt
 
 ```bash
 # Copy file vào project của bạn
 # Import ES6 module
+import { registerGetEndpoint } from './main.js'
 ```
 
 ## 💡 Sử dụng cơ bản
@@ -24,27 +26,35 @@ Thư viện JavaScript nhẹ và mạnh mẽ để quản lý đồng bộ dữ 
 
 ```javascript
 import { 
-    registerGetEndpoint, 
-    registerPostEndpoint, 
+    registerGetEndpoint,
+    registerPostEndpoint,
+    registerPutEndpoint,
+    registerPatchEndpoint,
+    registerDeleteEndpoint,
     requestHandlers 
-} from './datasync.js';
+} from './main.js';
 
-// Đăng ký GET endpoint
-registerGetEndpoint('getUsers', '/api/users');
+// Đăng ký GET endpoint với path params
+registerGetEndpoint('getUser', '/api/users/:id');
 registerGetEndpoint('searchUsers', '/api/users/search', 'no-cache');
 
-// Đăng ký POST endpoint  
+// Đăng ký POST endpoint với FormData support
 registerPostEndpoint('createUser', '/api/users');
-registerPostEndpoint('updateUser', '/api/users');
+registerPostEndpoint('uploadAvatar', '/api/users/:id/avatar');
+
+// PUT, PATCH và DELETE endpoints
+registerPutEndpoint('replaceUser', '/api/users/:id');
+registerPatchEndpoint('updateUser', '/api/users/:id'); 
+registerDeleteEndpoint('deleteUser', '/api/users/:id');
 ```
 
 ### 2. Gọi API
 
 ```javascript
-// GET request với parameters
-const users = await requestHandlers.getUsers({ 
-    page: 1, 
-    limit: 10 
+// GET request với path params và query params 
+const user = await requestHandlers.getUser({ 
+    id: 123,          // path param (:id)
+    fields: 'name,email'  // query param
 });
 
 // GET request no-cache (luôn fetch mới)
@@ -58,10 +68,23 @@ const newUser = await requestHandlers.createUser({
     email: 'john@example.com'
 });
 
-// POST request với FormData
+// POST request với FormData và path params
 const formData = new FormData();
 formData.append('avatar', file);
-await requestHandlers.updateUser(formData, { id: 123 });
+await requestHandlers.uploadAvatar(formData, { id: 123 });
+
+// PUT vs PATCH request (thay thế vs cập nhật một phần)
+await requestHandlers.replaceUser({
+    name: 'John Smith',
+    email: 'john.smith@example.com'
+}, { id: 123 });
+
+await requestHandlers.updateUser({
+    name: 'John Smith'
+}, { id: 123 });
+
+// DELETE request với path param
+await requestHandlers.deleteUser({ id: 123 });
 ```
 
 ### 3. Thiết lập Loading Hooks
@@ -99,7 +122,7 @@ if (hasError()) {
 ### 5. Interceptors
 
 ```javascript
-import { interceptors } from './datasync.js';
+import { interceptors } from './main.js';
 
 // Interceptor trước khi gửi request
 interceptors.before = async ({ params, body, headers, type }) => {
@@ -107,6 +130,13 @@ interceptors.before = async ({ params, body, headers, type }) => {
     const token = localStorage.getItem('token');
     if (token) {
         headers.append('Authorization', `Bearer ${token}`);
+    }
+
+    // Thay đổi header cho từng loại request
+    if (type === 'POST' || type === 'PUT' || type === 'PATCH') {
+        if (!(body instanceof FormData)) {
+            headers.append('Content-Type', 'application/json');
+        }
     }
     
     console.log(`${type} request:`, { params, body });
@@ -120,10 +150,15 @@ interceptors.after = (result) => {
     if (result.newToken) {
         localStorage.setItem('token', result.newToken);
     }
+
+    // Xử lý refresh token
+    if (result.code === 'TOKEN_EXPIRED') {
+        // Refresh token logic
+    }
 };
 ```
 
-## 📚 API Reference
+## 📚 API Reference 
 
 ### Core Functions
 
@@ -131,28 +166,46 @@ interceptors.after = (result) => {
 Đăng ký một GET endpoint.
 
 - `name`: Tên unique cho endpoint
-- `url`: URL của API endpoint  
+- `url`: URL của API endpoint, có thể chứa path params (ví dụ: `/api/users/:id`)
 - `mode`: `'no-cache'` để disable cache (optional)
 
 #### `registerPostEndpoint(name, url)`
 Đăng ký một POST endpoint.
 
+- `name`: Tên unique cho endpoint  
+- `url`: URL của API endpoint, hỗ trợ cả JSON body và FormData
+
+#### `registerPutEndpoint(name, url)`
+Đăng ký một PUT endpoint để thay thế hoàn toàn resource.
+
+- `name`: Tên unique cho endpoint
+- `url`: URL của API endpoint
+
+#### `registerPatchEndpoint(name, url)`
+Đăng ký một PATCH endpoint để cập nhật một phần resource.
+
+- `name`: Tên unique cho endpoint
+- `url`: URL của API endpoint
+
+#### `registerDeleteEndpoint(name, url)`  
+Đăng ký một DELETE endpoint.
+
 - `name`: Tên unique cho endpoint
 - `url`: URL của API endpoint
 
 #### `setLoadingHooks({ onQueueAdd, onQueueEmpty })`
-Thiết lập callbacks cho loading states.
+Thiết lập callbacks cho loading states với debounce 600ms.
 
 - `onQueueAdd`: Callback khi có request mới
 - `onQueueEmpty`: Callback khi hết request
 
 ### Data Stores
 
-#### `dataStore`
+#### `dataStore` 
 Map chứa dữ liệu sau khi sync từ server.
 
 ```javascript
-import { dataStore } from './datasync.js';
+import { dataStore } from './main.js';
 
 // Lấy dữ liệu đã cache
 const cachedUsers = dataStore.get('getUsers');
@@ -166,17 +219,35 @@ const { error, success } = messageState;
 ```
 
 #### `paramCache`
-Map chứa cache của parameters để tránh duplicate requests.
+Map chứa cache của parameters để tránh duplicate requests cho GET requests.
+
+### Request Handlers
+
+#### `requestHandlers[name](params)`
+GET và DELETE requests nhận một object params:
+- Path params sẽ thay thế vào URL (ví dụ: `:id`)
+- Các params còn lại sẽ trở thành query string
+
+#### `requestHandlers[name](body, params)`
+POST, PUT và PATCH requests nhận:
+- body: JSON object hoặc FormData instance
+- params: Object chứa path params và query params
 
 ### Utility Functions
 
 #### `hasError()`
-Kiểm tra có lỗi hay không.
+Kiểm tra có lỗi xảy ra không.
 
 ```javascript
 if (hasError()) {
     // Xử lý lỗi
 }
+```
+
+#### `interceptors`
+Object chứa các interceptors:
+- `before`: Chạy trước khi gửi request, có thể modify headers
+- `after`: Chạy sau khi nhận response, xử lý kết quả chung
 ```
 
 ## 🎯 Các tình huống sử dụng
@@ -240,41 +311,92 @@ Library mong đợi response có format:
 ```javascript
 // Success response
 {
-    "code": "SUCCESS",
-    "data": [...], // hoặc "result": [...]
+    "code": "SUCCESS",  // hoặc không có code
+    "data": [...],      // hoặc "result": [...]
     "message": "Optional success message"
 }
 
 // Error response  
 {
-    "code": "ERROR",
-    "message": "Error description"
+    "code": "ERROR",    // hoặc bất kỳ code nào khác SUCCESS
+    "message": "Error description",
+    "result": false     // hoặc status code không phải 2xx
 }
 ```
 
-### Request Timeout
-Loading spinner sẽ hiển thị sau 600ms để tránh flash.
+### Request Handling
+- Loading spinner hiển thị sau 600ms để tránh flash
+- Tự động xử lý Content-Type cho JSON và FormData
+- Tự động parse response.json()
+- Tự động xử lý path params trong URL
+- Cache chỉ áp dụng cho GET requests có mode !== 'no-cache'
 
+### Path Parameters
 ```javascript
-const timeout = 600; // ms
+// URL: /api/users/:id/posts/:postId
+registerGetEndpoint('getPost', '/api/users/:id/posts/:postId');
+
+// Gọi API:
+const post = await requestHandlers.getPost({
+    id: 123,        // -> thay thế :id
+    postId: 456,    // -> thay thế :postId
+    fields: 'title,content'  // -> trở thành query param
+});
+
+// -> GET /api/users/123/posts/456?fields=title,content
 ```
 
 ## 🔧 Advanced Usage
 
-### Custom Error Handling
+### Error Handling
 
 ```javascript
-import { syncData } from './datasync.js';
+import { messageState, hasError } from './main.js';
 
-// Custom sync function
-const customSync = async () => {
-    try {
-        const data = await requestHandlers.getUsers();
-        return data;
-    } catch (error) {
-        // Custom error handling
-        showNotification('Failed to load users', 'error');
-        throw error;
+// Sử dụng try-catch
+try {
+    await requestHandlers.createUser(userData);
+    if (messageState.success) {
+        showNotification(messageState.success);
+    }
+} catch (error) {
+    console.error(error);
+}
+
+// Hoặc kiểm tra sau khi gọi
+const result = await requestHandlers.createUser(userData);
+if (hasError()) {
+    console.error(messageState.error);
+} else {
+    console.log('Success:', result);
+}
+```
+
+### Custom Headers & Auth
+
+```javascript
+import { interceptors } from './main.js';
+
+// Thêm auth và custom headers
+interceptors.before = async ({ headers, type }) => {
+    // Auth header
+    const token = localStorage.getItem('token');
+    if (token) {
+        headers.append('Authorization', `Bearer ${token}`);
+    }
+
+    // Custom header cho từng loại request
+    if (type === 'GET') {
+        headers.append('X-Custom', 'value');
+    }
+};
+
+// Refresh token handling
+interceptors.after = async (result) => {
+    if (result.code === 'TOKEN_EXPIRED') {
+        const newToken = await refreshToken();
+        localStorage.setItem('token', newToken);
+        // Có thể retry request cũ
     }
 };
 ```
@@ -286,16 +408,30 @@ const API_BASE = process.env.NODE_ENV === 'production'
     ? 'https://api.example.com' 
     : 'http://localhost:3000';
 
-registerGetEndpoint('getUsers', `${API_BASE}/users`);
+// Đăng ký endpoint với base URL
+const endpoints = {
+    getUser: '/api/users/:id',
+    createUser: '/api/users',
+    // ...
+};
+
+Object.entries(endpoints).forEach(([name, path]) => {
+    const url = API_BASE + path;
+    if (path.includes('/:')) {
+        registerGetEndpoint(name, url);
+    } else {
+        registerPostEndpoint(name, url);
+    }
+});
 ```
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes  
-4. Push to the branch
-5. Create a Pull Request
+1. Fork repository
+2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Tạo Pull Request
 
 ## 📄 License
 
