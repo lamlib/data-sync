@@ -15,9 +15,7 @@ Thư viện JavaScript nhẹ và mạnh mẽ để quản lý đồng bộ dữ 
 ## 🚀 Cài đặt
 
 ```bash
-# Copy file vào project của bạn
-# Import ES6 module
-import { registerGetEndpoint } from './main.js'
+npm install @lamlib/data-sync
 ```
 
 ## 💡 Sử dụng cơ bản
@@ -32,7 +30,7 @@ import {
     registerPatchEndpoint,
     registerDeleteEndpoint,
     requestHandlers 
-} from './main.js';
+} from '@lamlib/data-sync';
 
 // Đăng ký GET endpoint với path params
 registerGetEndpoint('getUser', '/api/users/:id');
@@ -90,7 +88,7 @@ await requestHandlers.deleteUser({ id: 123 });
 ### 3. Thiết lập Loading Hooks
 
 ```javascript
-import { setLoadingHooks } from './datasync.js';
+import { setLoadingHooks } from '@lamlib/data-sync';
 
 setLoadingHooks({
     onQueueAdd: () => {
@@ -107,7 +105,7 @@ setLoadingHooks({
 ### 4. Xử lý Message States
 
 ```javascript
-import { messageState, hasError } from './datasync.js';
+import { messageState, hasError } from '@lamlib/data-sync';
 
 // Kiểm tra lỗi sau khi gọi API
 await requestHandlers.getUsers();
@@ -122,7 +120,7 @@ if (hasError()) {
 ### 5. Interceptors
 
 ```javascript
-import { interceptors } from './main.js';
+import { interceptors } from '@lamlib/data-sync';
 
 // Interceptor trước khi gửi request
 interceptors.before = async ({ params, body, headers, type }) => {
@@ -205,7 +203,7 @@ Thiết lập callbacks cho loading states với debounce 600ms.
 Map chứa dữ liệu sau khi sync từ server.
 
 ```javascript
-import { dataStore } from './main.js';
+import { dataStore } from '@lamlib/data-sync';
 
 // Lấy dữ liệu đã cache
 const cachedUsers = dataStore.get('getUsers');
@@ -256,7 +254,7 @@ Object chứa các interceptors:
 
 ```javascript
 import { useEffect, useState } from 'react';
-import { requestHandlers, setLoadingHooks, messageState } from './datasync.js';
+import { requestHandlers, setLoadingHooks, messageState } from '@lamlib/data-sync';
 
 function UserList() {
     const [users, setUsers] = useState([]);
@@ -351,7 +349,7 @@ const post = await requestHandlers.getPost({
 ### Error Handling
 
 ```javascript
-import { messageState, hasError } from './main.js';
+import { messageState, hasError } from '@lamlib/data-sync';
 
 // Sử dụng try-catch
 try {
@@ -375,7 +373,7 @@ if (hasError()) {
 ### Custom Headers & Auth
 
 ```javascript
-import { interceptors } from './main.js';
+import { interceptors } from '@lamlib/data-sync';
 
 // Thêm auth và custom headers
 interceptors.before = async ({ headers, type }) => {
