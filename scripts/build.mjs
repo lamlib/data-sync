@@ -22,7 +22,7 @@ await esbuild.build({
  * ============================================================
  */`,
   },
-  outdir: 'dist',
+  outfile: 'lib/datasync.esm.js',
   format: 'esm',
   globalName: 'DataSync',
   minify: true,
