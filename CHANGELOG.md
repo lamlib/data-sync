@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/lamlib/data-sync/compare/v1.2.0...v1.2.1) (2025-06-27)
+
+
+### Bug Fixes
+
+* fix wrong properties assign ([d540852](https://github.com/lamlib/data-sync/commit/d540852c3ba64a635208af0aaf96535e8f908c8c))
+
 ## [1.2.0](https://github.com/lamlib/data-sync/compare/v1.1.3...v1.2.0) (2025-06-27)
 
 
