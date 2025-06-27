@@ -59,9 +59,9 @@ const responseOperator = {
 }
 
 const setResponseOperator = ({ picker, errCatcher }) => {
-    if (typeof errCatcher === 'function') responseOperator.after = errCatcher;
+    if (typeof errCatcher === 'function') responseOperator.errCatcher = errCatcher;
     else console.warn('⚠️ DataSync: Invalid errCatcher response operator.');
-    if (typeof picker === 'function') responseOperator.before = picker
+    if (typeof picker === 'function') responseOperator.picker = picker
     else console.warn('⚠️ DataSync: Invalid picker response operator.');
 }
 /**
