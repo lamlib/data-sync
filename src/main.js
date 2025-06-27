@@ -35,6 +35,35 @@ const setLoadingHooks = ({ onQueueAdd, onQueueEmpty }) => {
     }
 };
 
+const responseOperator = {
+    picker: (result) => {
+        return result.data || result.result;
+    },
+    errCatcher: (response, result) => {
+        if (
+            result.code && result.code !== 'SUCCESS' || 
+            result.result === false || 
+            !response.ok
+        ) throw new Error(result.message);
+    },
+    reset: () => {
+        responseOperator.picker = (result) => result.data || result.result;
+        responseOperator.errCatcher = (response, result) => {
+            if (
+                result.code && result.code !== 'SUCCESS' || 
+                result.result === false || 
+                !response.ok
+            ) throw new Error(result.message);
+        };
+    }
+}
+
+const setResponseOperator = ({ picker, errCatcher }) => {
+    if (typeof errCatcher === 'function') responseOperator.after = errCatcher;
+    else console.warn('⚠️ DataSync: Invalid errCatcher response operator.');
+    if (typeof picker === 'function') responseOperator.before = picker
+    else console.warn('⚠️ DataSync: Invalid picker response operator.');
+}
 /**
  * Kiểm tra param có thay đổi không
  * @param {string} key 
@@ -82,13 +111,11 @@ const syncData = async (fetchFn, key, params) => {
 
         interceptors.after && interceptors.after(result);
 
-        if (
-            result.code && result.code !== 'SUCCESS' || 
-            result.result === false || 
-            !response.ok
-        ) throw new Error(result.message);
+        responseOperator.errCatcher(response, result);
 
-        const data = result.data || result.result;
+        
+
+        const data = responseOperator.picker(result);
         dataStore.set(key, data);
 
         if (result.message) messageState.success = result.message;
@@ -323,6 +350,7 @@ export {
     registerPutEndpoint,
     registerDeleteEndpoint,
     setLoadingHooks,
+    setResponseOperator,
     dataStore,
     paramCache,
     messageState,
