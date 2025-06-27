@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/lamlib/data-sync/compare/v1.1.3...v1.2.0) (2025-06-27)
+
+
+### Features
+
+* add api setResponseOperator ([a6f2d23](https://github.com/lamlib/data-sync/commit/a6f2d23d6a8b4854245aecb39ca1e4c239d93d76))
+
 ### [1.1.3](https://github.com/lamlib/data-sync/compare/v1.1.2...v1.1.3) (2025-06-24)
 
 ### [1.1.2](https://github.com/lamlib/data-sync/compare/v1.1.1...v1.1.2) (2025-06-24)
