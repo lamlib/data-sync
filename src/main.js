@@ -64,6 +64,10 @@ const setResponseOperator = ({ picker, errCatcher }) => {
     if (typeof picker === 'function') responseOperator.picker = picker
     else console.warn('⚠️ DataSync: Invalid picker response operator.');
 }
+
+const resetResponseOperator = () => {
+    responseOperator.reset();
+}
 /**
  * Kiểm tra param có thay đổi không
  * @param {string} key 
@@ -351,6 +355,7 @@ export {
     registerDeleteEndpoint,
     setLoadingHooks,
     setResponseOperator,
+    resetResponseOperator,
     dataStore,
     paramCache,
     messageState,
