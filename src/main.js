@@ -31,7 +31,7 @@ const setLoadingHooks = ({ onQueueAdd, onQueueEmpty }) => {
         loadingHooks.onQueueAdd = onQueueAdd;
         loadingHooks.onQueueEmpty = onQueueEmpty;
     } else {
-        console.warn('⚠️ DataSync: Missing loading hooks. Use setLoadingHooks() to register.');
+        console.warn('DataSync: Missing loading hooks. Use setLoadingHooks() to register.');
     }
 };
 
@@ -60,9 +60,9 @@ const responseOperator = {
 
 const setResponseOperator = ({ picker, errCatcher }) => {
     if (typeof errCatcher === 'function') responseOperator.errCatcher = errCatcher;
-    else console.warn('⚠️ DataSync: Invalid errCatcher response operator.');
+    else console.warn('DataSync: Invalid errCatcher response operator.');
     if (typeof picker === 'function') responseOperator.picker = picker
-    else console.warn('⚠️ DataSync: Invalid picker response operator.');
+    else console.warn('DataSync: Invalid picker response operator.');
 }
 
 const resetResponseOperator = () => {
@@ -94,8 +94,8 @@ const syncData = async (fetchFn, key, params) => {
     try {
         if (!!params !== false) {
             if (isSameParams(key, params)) {
-                console.warn('⚠️ DataSync: Using cached data, skipping request.');
-                return;
+                console.warn('DataSync: Using cached data, skipping request.');
+                return dataStore.get(key);
             }
             paramCache.set(key, params);
         }
