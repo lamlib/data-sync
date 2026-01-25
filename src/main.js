@@ -24,9 +24,9 @@ const loadingDelay = {
  * @param {{ queueAddDelay: number; queueEmptyDelay: number }} hooks
  */
 const setLoadingDelay = ({queueAddDelay, queueEmptyDelay}) => {
-    if (queueAddDelay && queueEmptyDelay) {
+    if (!Number.isNaN(queueAddDelay) && !Number.isNaN(queueEmptyDelay)) {
         loadingDelay.queueAddDelay = queueAddDelay;
-        queueEmptyDelay.queueEmptyDelay = queueEmptyDelay;
+        loadingDelay.queueEmptyDelay = queueEmptyDelay;
     } else {
         console.warn('DataSync: Missing loading delay config. Use setLoadingDelay() to register.');
     }
