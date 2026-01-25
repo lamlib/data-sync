@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.3.3](https://github.com/lamlib/data-sync/compare/v1.3.2...v1.3.3) (2026-01-25)
+
+
+### Bug Fixes
+
+* **fix previous commit:** just fix previous commit ([037437d](https://github.com/lamlib/data-sync/commit/037437d00a1872321754af403fb5cf85b6c87f95))
+
 ### [1.3.2](https://github.com/lamlib/data-sync/compare/v1.3.1...v1.3.2) (2026-01-25)
 
 
