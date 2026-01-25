@@ -13,6 +13,25 @@ const loadingHooks = {
     onQueueAdd: null,
 };
 
+/** Kiểm soát delay loading, sử dụng trong các trường hợp đặc biệt */
+const loadingDelay = { 
+    queueAddDelay: 0,
+    queueEmptyDelay: 0,
+}
+
+/** 
+ * TODO: Viết test cho cơ chế xử lý loading
+ * @param {{ queueAddDelay: number; queueEmptyDelay: number }} hooks
+ */
+const setLoadingDelay = ({queueAddDelay, queueEmptyDelay}) => {
+    if (queueAddDelay && queueEmptyDelay) {
+        loadingDelay.queueAddDelay = queueAddDelay;
+        queueEmptyDelay.queueEmptyDelay = queueEmptyDelay;
+    } else {
+        console.warn('DataSync: Missing loading delay config. Use setLoadingDelay() to register.');
+    }
+}
+
 /** Trạng thái thông báo lỗi và thành công */
 const messageState = {
     error: null,
@@ -23,6 +42,7 @@ const messageState = {
 const hasError = () => !!messageState.error;
 
 /**
+ * TODO: Viết test cho cơ chế xử lý loading
  * Gán các hàm hook để xử lý UI loading khi có request
  * @param {{ onQueueAdd(): void; onQueueEmpty(): void }} hooks
  */
@@ -85,7 +105,7 @@ const isSameParams = (key, params) => {
  * Xử lý đồng bộ dữ liệu với máy chủ, có cache và loading hooks
  * @param {Function} fetchFn 
  * @param {string} key 
- * @param {any[]|false} params 
+ * @param {any[]|false} params
  * @returns {Promise<any>}
  */
 const syncData = async (fetchFn, key, params) => {
@@ -100,16 +120,18 @@ const syncData = async (fetchFn, key, params) => {
             paramCache.set(key, params);
         }
 
-        const timeout = 600;
-        const timeoutId = setTimeout(() => {
-            activeRequestCount++;
-            loadingHooks.onQueueAdd && loadingHooks.onQueueAdd();
-        }, timeout);
+        let timeoutId;
+        if(loadingDelay.queueAddDelay) {
+            timeoutId = setTimeout(() => {
+                activeRequestCount++;
+                loadingHooks.onQueueAdd && loadingHooks.onQueueAdd();
+            }, loadingDelay.queueAddDelay);
+        }
 
         dataStore.set(key, null);
         /**@type {Response} */
         const response = await fetchFn();
-        clearTimeout(timeoutId);
+        timeoutId && clearTimeout(timeoutId);
 
         const result = await response.json();
 
@@ -130,7 +152,11 @@ const syncData = async (fetchFn, key, params) => {
     } finally {
         if (activeRequestCount > 0) activeRequestCount--;
         if (activeRequestCount === 0) {
-            loadingHooks.onQueueEmpty && loadingHooks.onQueueEmpty();
+            setTimeout(() => {
+                if(!activeRequestCount) { // Nếu sau khoảng time vẫn trống thì mới xóa loading
+                    loadingHooks.onQueueEmpty && loadingHooks.onQueueEmpty();
+                }
+            }, loadingDelay.queueEmptyDelay)
         }
         
     }
@@ -354,6 +380,7 @@ export {
     registerPutEndpoint,
     registerDeleteEndpoint,
     setLoadingHooks,
+    setLoadingDelay,
     setResponseOperator,
     resetResponseOperator,
     dataStore,

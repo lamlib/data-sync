@@ -4,8 +4,50 @@ A lightweight client-side data synchronization library built on the Fetch API. S
 
 ## Installation
 
+### NPM
+
 ```bash
 npm install @lamlib/data-sync
+```
+
+### CDN (Browser)
+
+**ES Module:**
+```html
+<script type="module">
+  import {
+    registerGetEndpoint,
+    registerPostEndpoint,
+    requestHandlers
+  } from 'https://unpkg.com/@lamlib/data-sync/lib/datasync.esm.js';
+
+  // Your code here
+</script>
+```
+
+**IIFE (Global variable):**
+```html
+<script src="https://unpkg.com/@lamlib/data-sync/lib/datasync.iife.js"></script>
+<script>
+  const {
+    registerGetEndpoint,
+    registerPostEndpoint,
+    requestHandlers
+  } = DataSync;
+
+  // Your code here
+</script>
+```
+
+**jsDelivr alternative:**
+```html
+<!-- ESM -->
+<script type="module">
+  import { ... } from 'https://cdn.jsdelivr.net/npm/@lamlib/data-sync/lib/datasync.esm.js';
+</script>
+
+<!-- IIFE -->
+<script src="https://cdn.jsdelivr.net/npm/@lamlib/data-sync/lib/datasync.iife.js"></script>
 ```
 
 ## Quick Start
@@ -343,6 +385,11 @@ setLoadingHooks({
   onQueueAdd: () => document.body.classList.add('loading'),
   onQueueEmpty: () => document.body.classList.remove('loading')
 });
+
+setLoadingDelay({
+  queueAddDelay: 10, //ms
+  queueEmptyDelay: 500, //ms
+})
 
 // Configure response handling for your API format
 setResponseOperator({

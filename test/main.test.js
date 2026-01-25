@@ -23,6 +23,7 @@ test('Apis is define', () => {
     expect(datasync.dataStore).toBeDefined();
     expect(datasync.hasError).toBeDefined();
     expect(datasync.interceptors).toBeDefined();
+    expect(datasync.setLoadingDelay).toBeDefined();
     expect(datasync.loadingHooks).toBeDefined();
     expect(datasync.messageState).toBeDefined();
     expect(datasync.paramCache).toBeDefined();
