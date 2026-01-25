@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.3.2](https://github.com/lamlib/data-sync/compare/v1.3.1...v1.3.2) (2026-01-25)
+
+
+### Bug Fixes
+
+* **loading is handle not good:** i add new api for handle loading delay setting and default zero ([5195d44](https://github.com/lamlib/data-sync/commit/5195d4425599275159d4b28e60d9728a27459c22)), closes [#3](https://github.com/lamlib/data-sync/issues/3)
+
 ### [1.3.1](https://github.com/lamlib/data-sync/compare/v1.3.0...v1.3.1) (2025-12-30)
 
 ## [1.3.0](https://github.com/lamlib/data-sync/compare/v1.2.1...v1.3.0) (2025-06-27)
